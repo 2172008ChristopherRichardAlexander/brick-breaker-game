@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game</title>
+    <style>
+        #canvas1 {
+            border: 2px solid black;
+            position: absolute;
+        }
+
+        #canvas2 {
+            border: 2px solid black;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #score {
+            position: absolute;
+        }
+
+        .nav-bar {
+            background-color: #000;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        .active {
+            font-weight: bold;
+        }
+
+        .nav-link:hover {
+            transform: scale(1.2);
+            transition: 0.5s;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+</head>
+
+<body>
+    <audio autoplay>
+        <source src="./audio/soundtrack_main.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="bounce" src="audio/bounce.mp3"></audio>
+    <audio id="point" src="audio/point.mp3"></audio>
+    <h1 id="score">Point = 0</h1>
+    <div class="container" id="container">
+        <canvas id="canvas1" width="1000" height="600"></canvas>
+        <canvas id="canvas2" width="1000" height="600"></canvas>
+    </div>
+    <script type="module">
+        import * as Example from "./script/game.js";
+        var bounce = document.getElementById("bounce");
+        var pointAudio = document.getElementById("point");
+        var tempPoint = []
+        function create_obstacle() {
+            const canvasContainer = document.getElementById("container");
+
+            for (var i = 10; i < 26; i++) {
+                
+                const newCanvas = document.createElement("canvas");
+                newCanvas.id = "canvas" + i;
+                newCanvas.width = 1000;
+                newCanvas.height = 600;
+
+                
+                newCanvas.style.border = '2px solid black';
+                newCanvas.style.position = 'absolute';
+
+                
+                canvasContainer.appendChild(newCanvas);
+                console.log("Canvas " + i + " created");
+
+            }
+            var pointX = 125;
+            var pointY = 0;
+
+            for (var i = 10; i < 26; i++) {
+                array_point = [{ x: pointX - 25, y: pointY }, { x: pointX + 25, y: pointY }, { x: pointX + 25, y: pointY + 50 }, { x: pointX - 25, y: pointY+50 }];
+                var canvas = document.getElementById("canvas" + i);
+                var ctx = canvas.getContext("2d");
+                var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                Example.polygon(imageData, array_point, [255, 255, 0]);
+                tempPoint.push(array_point);
+                Example.floodFillStacked(imageData, canvas, pointX, pointY + 25, { r: 0, g: 0, b: 0 }, { r: 255, g: 0, b: 0 });
+                ctx.putImageData(imageData, 0, 0);
+                pointX += 50
+            }
+
+
+        }
+        addEventListener("click", function (ev) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let rect = canvas.getBoundingClientRect();
+            let mouseX = Math.round(ev.clientX - rect.left);
+            let mouseY = Math.round(ev.clientY - rect.top);
+            console.log("X Pos:", mouseX, "Y Pos:", mouseY);
+        });
+
+
+        create_obstacle();
+        var canvas = document.getElementById("canvas1");
+        var ctx = canvas.getContext("2d");
+        var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        var random_x, random_y, random_generate, x, y;
+        var array_point = [{ x: 450, y: 400 }, { x: 550, y: 400 }, { x: 550, y: 425 }, { x: 450, y: 425 }];
+
+        var canvas2 = document.getElementById("canvas2");
+        var ctx2 = canvas2.getContext("2d");
+        var imageData2 = ctx2.getImageData(0, 0, canvas2.width, canvas2.height);
+        var point_x, point_y;
+        point_x = Math.floor((array_point[1].x + array_point[0].x) / 2);
+        point_y = Math.floor((array_point[2].y + array_point[1].y) / 2);
+        Example.polygon(imageData2, array_point, [0, 255, 0]);
+        Example.floodFillStacked(imageData2, canvas2, point_x, point_y, { r: 0, g: 0, b: 0 }, { r: 0, g: 255, b: 0 });
+        ctx2.putImageData(imageData2, 0, 0);
+        addEventListener("keydown", function (event) {
+            if (event.keyCode != '37' && event.keyCode != '39') {
+                return;
+            }
+
+            ctx2.clearRect(0, 0, canvas2.width, canvas2.height);
+            imageData2 = ctx2.getImageData(0, 0, canvas2.width, canvas2.height);
+            
+            var temp;
+            if (event.keyCode == '37') {
+                if (array_point[0].x > 10) {
+                    temp = Example.translation_array(array_point, { x: -10, y: 0 });
+                } else {
+                    temp = array_point;
+                }
+            }
+            else if (event.keyCode == '39') {
+                if (array_point[1].x < 990) {
+                    temp = Example.translation_array(array_point, { x: 10, y: 0 });
+                } else {
+                    temp = array_point;
+                }
+            }
+
+            
+            array_point = temp;
+
+           
+            point_x = Math.floor((array_point[1].x + array_point[0].x) / 2);
+            point_y = Math.floor((array_point[2].y + array_point[1].y) / 2);
+
+            
+            Example.polygon(imageData2, array_point, [0, 255, 0]);
+            Example.floodFillStacked(imageData2, canvas2, point_x, point_y, { r: 0, g: 0, b: 0 }, { r: 0, g: 255, b: 0 });
+            ctx2.putImageData(imageData2, 0, 0);
+        });
+        Example.polygon(imageData2, array_point, [0, 255, 0])
+        ctx2.putImageData(imageData2, 0, 0);
+        function randomBall() {
+            var random_x = 500;
+            var random_y = 385;
+            return ({ x: random_x, y: random_y });
+        }
+        var point = 0;
+        function drawImage() {
+            var randomResult;
+            var translation_x, translation_y;
+            var random_direction = Math.floor(Math.random() * 3) + 1
+            var random_red = Math.floor(Math.random() * 255);
+            var random_green = Math.floor(Math.random() * 255);
+            var random_blue = Math.floor(Math.random() * 255);
+            if (random_direction == 0) {
+                translation_x = 1;
+                translation_y = 1;
+            } else if (random_direction == 1) {
+                translation_x = -1;
+                translation_y = 1;
+            } else if (random_direction == 2) {
+                translation_x = 1;
+                translation_y = -1;
+            } else {
+                translation_x = -1;
+                translation_y = -1;
+            }
+            randomResult = randomBall();
+            Example.circle_polar(imageData, [randomResult.x, randomResult.y], 10, [random_red, random_green, random_blue]);
+            var myInterval = setInterval(moving_ball, 10);
+            function moving_ball() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                var temp = Example.translation({ x: randomResult.x, y: randomResult.y }, { x: translation_x, y: translation_y });
+                randomResult.x += translation_x;
+                randomResult.y += translation_y;
+                if (temp.x > canvas.width - 15) {
+                    translation_x = -1;
+                    bounce.play();
+                }
+                if (temp.y > canvas.height - 15) {
+                    clearInterval(myInterval);
+                    document.getElementById("score").innerHTML = "GAME OVER !!!";
+                }
+                if (temp.y < 15) {
+                    translation_y = 1;
+                    bounce.play();
+                }
+                if (temp.x < 15) {
+                    translation_x = 1;
+                    bounce.play();
+                }
+                if (temp.y >= 385) {
+                    if (temp.x > array_point[0].x && temp.x < array_point[1].x) {
+                        translation_y = -1
+                        bounce.play();
+
+                    }
+                    else {
+                        translation_y = 1
+                        bounce.play();
+                    }
+                }
+                if (temp.y <= 50) {
+                    for (var i = 0; i < tempPoint.length; i++) {
+                        if (temp.x > tempPoint[i][0].x && temp.x < tempPoint[i][1].x) {
+
+                            if(i>9){
+                                var tempCanvas = document.getElementById("canvas" +(10+ i));
+                               
+                            }else{
+                                var tempCanvas = document.getElementById("canvas1" + i);
+                               
+                            }
+                            var tempCtx = tempCanvas.getContext("2d");
+                            tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+                            imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                            translation_y = 1
+                            tempPoint[i][0].x = 0
+                            tempPoint[i][1].x = 0
+                            pointAudio.play();
+                            point += 10;
+                        }
+                    }
+                }
+                document.getElementById("score").innerHTML = "Point = " + point;
+                Example.circle_polar(imageData, [temp.x, temp.y], 10, [random_red, random_green, random_blue]);
+                Example.floodFillStacked(imageData, canvas, temp.x, temp.y, { r: 0, g: 0, b: 0 }, { r: random_red, g: random_green, b: random_blue });
+                ctx.putImageData(imageData, 0, 0);
+                if (point == 160) {
+                    alert('You Win!!');
+                    clearInterval(myInterval);
+                }
+            }
+        }
+
+        drawImage()
+        ctx.putImageData(imageData, 0, 0);
+
+
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>
